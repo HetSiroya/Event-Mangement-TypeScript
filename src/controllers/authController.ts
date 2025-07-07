@@ -5,6 +5,8 @@ import generateToken from "../helpers/token";
 import userModel from "../models/usersModel";
 import { comparePassword, hashPassword } from "../helpers/hased";
 import { CustomRequest } from "../middlewares/token-decode";
+import verifyModel from "../models/verifyMode";
+import { generateOtp } from "../helpers/generateOtp";
 
 export const authController = {
   // Sign Up function
@@ -92,9 +94,7 @@ export const authController = {
       });
     }
   },
-
   // Login function
-
   login: async (req: Request, res: Response) => {
     try {
       const { input, password } = req.body;
@@ -151,11 +151,9 @@ export const authController = {
           data: "",
         });
       }
+      const { oldPassword, newPassword, confirmNewPassword } = req.body;
       // Validate old password
-      const isMatch = await comparePassword(
-        req.body.oldPassword,
-        user.password
-      );
+      const isMatch = await comparePassword(oldPassword, user.password);
       if (!isMatch) {
         return res.status(400).json({
           status: false,
@@ -163,7 +161,24 @@ export const authController = {
           data: "",
         });
       }
-      const { oldPassword, newPassword, confirmNewPassword } = req.body;
+      // Validate new password
+      if (newPassword !== confirmNewPassword) {
+        return res.status(400).json({
+          status: false,
+          message: "New passwords do not match",
+          data: "",
+        });
+      }
+      // Hash new password
+      const hashedNewPassword = await hashPassword(newPassword);
+      // Update user password
+      user.password = hashedNewPassword;
+      await user.save();
+      res.status(200).json({
+        status: true,
+        message: "Password changed successfully",
+        data: user,
+      });
     } catch (error: any) {
       console.log("Error during login:", error.message);
       res.status(500).json({
@@ -229,6 +244,158 @@ export const authController = {
       });
     } catch (error: any) {
       console.log("Error during login:", error.message);
+      res.status(500).json({
+        status: false,
+        message: "Something went wrong",
+        data: "",
+      });
+    }
+  },
+  // verify Profile
+  sendOtp: async (req: CustomRequest, res: Response) => {
+    try {
+      const userId = req.user?._id;
+      if (!userId) {
+        return res.status(400).json({
+          status: false,
+          message: "User ID is required",
+          data: "",
+        });
+      }
+      const user = await userModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found",
+          data: "",
+        });
+      }
+      // check if  already verified
+      if (user.isVerified) {
+        return res.status(400).json({
+          status: false,
+          message: "User is already verified",
+          data: "",
+        });
+      }
+      // Check if OTP already exists for the user
+      let existingVerification = await verifyModel.findOne({
+        userId: userId,
+      });
+      if (existingVerification) {
+        existingVerification.otp = generateOtp();
+        await existingVerification.save();
+        return res.status(200).json({
+          status: true,
+          message: "OTP updated and sent successfully",
+          data: existingVerification,
+        });
+      }
+      // Generate OTP
+      const newVerification = new verifyModel({
+        email: user.email,
+        userId: user._id,
+        otp: generateOtp(),
+      });
+      // Save OTP to database
+      await newVerification.save();
+      return res.status(200).json({
+        status: true,
+        message: "OTP sent successfully",
+        data: newVerification,
+      });
+    } catch (error: any) {
+      console.log("Error during sending OTP:", error.message);
+      res.status(500).json({
+        status: false,
+        message: "Something went wrong",
+        data: "",
+      });
+    }
+  },
+
+  // verify OTP
+  verifyOtp: async (req: CustomRequest, res: Response) => {
+    try {
+      const userId = req.user?._id;
+      if (!userId) {
+        return res.status(400).json({
+          status: false,
+          message: "User ID is required",
+          data: "",
+        });
+      }
+      const { otp } = req.body;
+      if (!otp) {
+        return res.status(400).json({
+          status: false,
+          message: "OTP is required",
+          data: "",
+        });
+      }
+      // Find the OTP in the database
+      const verification = await verifyModel.findOne({
+        userId: userId,
+        otp: otp,
+      });
+      if (!verification) {
+        return res.status(400).json({
+          status: false,
+          message: "Invalid OTP",
+          data: "",
+        });
+      }
+      // OTP is valid, update user profile
+      const user = await userModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found",
+          data: "",
+        });
+      }
+      user.isVerified = true;
+      // detele otp
+      await verifyModel.deleteOne({ userId: userId, otp: otp });
+      await user.save();
+      return res.status(200).json({
+        status: true,
+        message: "OTP verified successfully",
+        data: user,
+      });
+    } catch (error: any) {
+      console.log("Error during OTP verification:", error.message);
+      res.status(500).json({
+        status: false,
+        message: "Something went wrong",
+        data: "",
+      });
+    }
+  },
+  // forgetPassword
+  forgetPassword: async (req: Request, res: Response) => {
+    try {
+      const { email, otp, newPassword, confirmPassword  } = req.body;
+      // Validate email
+      const user = await userModel.findOne({ email });
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found",
+          data: "",
+        });
+      }
+      const newVerification = new verifyModel({
+        email: user.email,
+        userId: user._id,
+        otp: generateOtp(),
+      });
+      // Save OTP to database
+      await newVerification.save();
+
+      // now chek that otp
+    } catch (error: any) {
+      console.log("Error during forget password:", error.message);
       res.status(500).json({
         status: false,
         message: "Something went wrong",
