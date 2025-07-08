@@ -10,4 +10,9 @@ router.patch("/updatePassword", catchAsync(authController.changePassword));
 router.patch("/updateProfile", auth, catchAsync(authController.updateProfile));
 router.post("/sendOtp", auth, catchAsync(authController.sendOtp));
 router.post("/verifyOtp", auth, catchAsync(authController.verifyOtp));
+router.post(
+  "/sendOtpForForgetPassword",
+  catchAsync(authController.sendOtpForForgetPassword)
+);
+router.post("/forgetPassword", catchAsync(authController.forgetPassword));
 export default router;

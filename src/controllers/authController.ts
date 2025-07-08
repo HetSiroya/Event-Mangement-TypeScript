@@ -138,7 +138,6 @@ export const authController = {
       });
     }
   },
-
   // Change Password function
   changePassword: async (req: CustomRequest, res: Response) => {
     try {
@@ -188,7 +187,7 @@ export const authController = {
       });
     }
   },
-
+  // update profile
   updateProfile: async (req: CustomRequest, res: Response) => {
     try {
       const userId = req.user._id;
@@ -313,7 +312,6 @@ export const authController = {
       });
     }
   },
-
   // verify OTP
   verifyOtp: async (req: CustomRequest, res: Response) => {
     try {
@@ -375,7 +373,7 @@ export const authController = {
   // forgetPassword
   forgetPassword: async (req: Request, res: Response) => {
     try {
-      const { email, otp, newPassword, confirmPassword  } = req.body;
+      const { email, otp, newPassword, confirmPassword } = req.body;
       // Validate email
       const user = await userModel.findOne({ email });
       if (!user) {
@@ -385,6 +383,88 @@ export const authController = {
           data: "",
         });
       }
+
+      // verify now the userr entered otp is correct or not
+      const verification = await verifyModel.findOne({
+        userId: user._id,
+        otp: otp,
+      });
+      if (!verification) {
+        return res.status(400).json({
+          status: false,
+          message: "Invalid OTP",
+          data: "",
+        });
+      }
+      // check user enter the password is same to old one
+      const isMatch = await comparePassword(newPassword, user.password);
+      if (isMatch) {
+        return res.status(400).json({
+          status: false,
+          message: "New password cannot be the same as the old password",
+          data: "",
+        });
+      }
+      // Check if new password and confirm password match
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({
+          status: false,
+          message: "New password and confirm password do not match",
+          data: "",
+        });
+      }
+      // Hash the new password
+      const hashedNewPassword = await hashPassword(newPassword);
+      // Update user password
+      user.password = hashedNewPassword;
+      await user.save();
+      // Delete the OTP after successful password reset
+      await verifyModel.deleteOne({ userId: user._id, otp: otp });
+      return res.status(200).json({
+        status: true,
+        message: "Password reset successfully",
+        data: user,
+      });
+
+      // now chek that otp
+    } catch (error: any) {
+      console.log("Error during forget password:", error.message);
+      res.status(500).json({
+        status: false,
+        message: "Something went wrong",
+        data: "",
+      });
+    }
+  },
+  // send OTP check and set new  password
+  sendOtpForForgetPassword: async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      // Validate email
+      const user = await userModel.findOne({
+        email: email,
+      });
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found",
+          data: "",
+        });
+      }
+      // Check if OTP already exists for the user
+      let existingVerification = await verifyModel.findOne({
+        userId: user._id,
+      });
+      if (existingVerification) {
+        existingVerification.otp = generateOtp();
+        await existingVerification.save();
+        return res.status(200).json({
+          status: true,
+          message: "OTP updated and sent successfully",
+          data: existingVerification,
+        });
+      }
+      // Generate OTP
       const newVerification = new verifyModel({
         email: user.email,
         userId: user._id,
@@ -392,8 +472,11 @@ export const authController = {
       });
       // Save OTP to database
       await newVerification.save();
-
-      // now chek that otp
+      return res.status(200).json({
+        status: true,
+        message: "OTP sent successfully",
+        data: newVerification,
+      });
     } catch (error: any) {
       console.log("Error during forget password:", error.message);
       res.status(500).json({
