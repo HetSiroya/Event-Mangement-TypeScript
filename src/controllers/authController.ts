@@ -222,7 +222,7 @@ export const authController = {
       // check if email or mobile number already exists
       const existUser = await userModel.findOne({
         $or: [{ email }, { mobileNumber }],
-        _id: { $ne: userId }, // Exclude current user
+        _id: { $ne: userId }, 
       });
       if (existUser) {
         return res.status(400).json({

@@ -6,10 +6,10 @@ interface IEvent {
   location: string;
   organizer: string;
   capacity: number;
-  time: Date;
+  time: String;
   image: string;
-  duration: number;
-  price: number;
+  duration: String;
+  price: String;
   category: string;
   isActive: boolean;
 }
@@ -21,12 +21,13 @@ const eventSchema = new mongoose.Schema<IEvent>({
   location: { type: String, required: true },
   organizer: { type: String, required: true },
   capacity: { type: Number, required: true },
-  time: { type: Date, required: true },
+  time: { type: String, required: true },
   image: { type: String, required: true },
-  duration: { type: Number, required: true },
-  price: { type: Number, required: true },
+  duration: { type: String, required: true },
+  price: { type: String, required: true },
   category: { type: String, required: true },
-  isActive: { type: Boolean, required: true },
+  isActive: { type: Boolean, default: true, required: true },
 });
 
-export const eventModel = mongoose.model<IEvent>("Event", eventSchema);
+const eventModel = mongoose.model<IEvent>("Event", eventSchema);
+export default eventModel;
