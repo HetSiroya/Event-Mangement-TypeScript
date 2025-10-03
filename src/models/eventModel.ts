@@ -4,7 +4,7 @@ interface IEvent {
   description: string;
   date: Date;
   location: string;
-  organizer: string;
+  organizer: mongoose.Schema.Types.ObjectId;
   capacity: number;
   time: String;
   image: string;
@@ -19,14 +19,14 @@ const eventSchema = new mongoose.Schema<IEvent>({
   description: { type: String, required: true },
   date: { type: Date, required: true },
   location: { type: String, required: true },
-  organizer: { type: String, required: true },
+  organizer: { type: mongoose.Schema.Types.ObjectId, required: true },
   capacity: { type: Number, required: true },
   time: { type: String, required: true },
   image: { type: String, required: true },
   duration: { type: String, required: true },
   price: { type: String, required: true },
   category: { type: String, required: true },
-  isActive: { type: Boolean, default: true, required: true },
+  isActive: { type: Boolean, default: true },
 });
 
 const eventModel = mongoose.model<IEvent>("Event", eventSchema);

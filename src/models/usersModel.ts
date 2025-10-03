@@ -7,6 +7,7 @@ interface IUser {
   password: string;
   isVerified: boolean;
   role: string;
+  date: Date;
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -36,6 +37,10 @@ const userSchema = new mongoose.Schema<IUser>({
     type: String,
     enum: ["user", "admin"],
     default: "user",
+  },
+  date: {
+    type: Date,
+    default: Date.now,
   },
 });
 

@@ -5,7 +5,7 @@ import generateToken from "../helpers/token";
 import userModel from "../models/usersModel";
 import { comparePassword, hashPassword } from "../helpers/hased";
 import { CustomRequest } from "../middlewares/token-decode";
-import verifyModel from "../models/verifyMode";
+import verifyModel from "../models/verifyModel";
 import { generateOtp } from "../helpers/generateOtp";
 
 export const authController = {
