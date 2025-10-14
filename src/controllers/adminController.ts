@@ -4,6 +4,7 @@ import { checkRequiredFields } from "../helpers/commonValidator";
 import eventModel from "../models/eventModel";
 import { log } from "console";
 import userModel from "../models/usersModel";
+import rigsterModel from "../models/rigsterModel";
 const adminController = {
   setEvent: async (req: CustomRequest, res: Response) => {
     const userId = req.user?._id;
@@ -221,6 +222,118 @@ const adminController = {
       });
     }
   },
+
+  downloadAttendeesCsv: async (req: CustomRequest, res: Response) => {
+    try {
+      const { eventId } = req.params as { eventId: string };
+      if (!eventId) {
+        return res.status(400).json({
+          status: false,
+          message: "Event ID is required",
+          data: "",
+        });
+      }
+
+      // Ensure event exists
+      const event = await eventModel.findById(eventId);
+      if (!event) {
+        return res.status(404).json({
+          status: false,
+          message: "Event not found",
+          data: "",
+        });
+      }
+
+      // Fetch registrations with user details
+      const regs = await rigsterModel
+        .find({ eventId })
+        .populate("userId", "name email mobileNumber");
+
+      // Prepare CSV rows
+      const headers = [
+        "eventId",
+        "userId",
+        "name",
+        "email",
+        "mobileNumber",
+        "status",
+        "registeredAt",
+      ];
+
+      const escape = (val: any) => {
+        if (val === null || val === undefined) return "";
+        const s = String(val);
+        if (/[",\n]/.test(s)) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      };
+
+      const rows = regs.map((r: any) => {
+        const u = r.userId || {};
+        return [
+          eventId,
+          r.userId?._id || "",
+          u.name || "",
+          u.email || "",
+          u.mobileNumber || "",
+          r.status || "",
+          r.createdAt ? new Date(r.createdAt).toISOString() : "",
+        ]
+          .map(escape)
+          .join(",");
+      });
+
+      const csv = [headers.join(","), ...rows].join("\n");
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="attendees-${eventId}.csv"`
+      );
+      return res.status(200).send(csv);
+    } catch (error: any) {
+      console.error("Error generating attendees CSV:", error.message);
+      return res.status(500).json({
+        status: false,
+        message: "Internal server error",
+        data: "",
+      });
+    }
+  },
+
+  getAllRigsterations : async (req : CustomRequest , res : Response) =>{
+    try {
+      const userId = req.user?._id;
+      if (!userId) {
+        return res.status(401).json({
+          status: false,
+          message: "Unauthorized: User ID is missing",
+          data: "",
+        });
+      }
+      const rigsterions = await rigsterModel.find({userId : userId}).populate("eventId");
+      if (!rigsterions || rigsterions.length === 0) {
+        return res.status(404).json({
+          status: false,
+          message: "No rigsterions found for this user",
+          data: "",
+        });
+      }
+      return res.status(200).json({
+        status: true,
+        message: "Rigsterions fetched successfully",
+        data: rigsterions,
+      });
+    } catch (error: any) {
+      console.error("Error generating attendees CSV:", error.message);
+      return res.status(500).json({
+        status: false,
+        message: "Internal server error",
+        data: "",
+      });
+    }
+  }
 };
 
 export default adminController;

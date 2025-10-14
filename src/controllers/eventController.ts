@@ -98,7 +98,6 @@ export const eventController = {
       });
     }
   },
-
   getSigleEventRigstrations: async (req: CustomRequest, res: Response) => {
     try {
       const eventId = req.params.eventId;

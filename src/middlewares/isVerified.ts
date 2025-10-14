@@ -8,8 +8,11 @@ export async function isVerified(
   next: NextFunction
 ) {
   try {
-    const userId = req.user?.id;
-    if (!userId) {
+    console.log("request" , req);
+    
+    const userId = req.user?._id;
+    console.log("userId", userId);
+      if (!userId) {
       throw new Error("User ID not found in request.");
     }
 

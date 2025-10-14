@@ -2,6 +2,7 @@ import jwt, { Secret, JwtPayload } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 require("dotenv").config();
 import dotenv from "dotenv";
+import { log } from 'console';
 
 export const SECRET_KEY: Secret =
   process.env.JWT_SECRET_KEY || "gfg_jwt_secret_key";
@@ -35,7 +36,8 @@ export const auth = async (
     }
 
     req.user = decoded;
-
+    console.log("userID" , req.user);
+    
     next();
   } catch (err) {
     console.error("Auth error:", err);

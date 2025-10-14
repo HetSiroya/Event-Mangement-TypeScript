@@ -15,4 +15,5 @@ router.post(
   catchAsync(authController.sendOtpForForgetPassword)
 );
 router.post("/forgetPassword", catchAsync(authController.forgetPassword));
+router.get("/profile", auth, catchAsync(authController.getProfile));
 export default router;

@@ -483,11 +483,54 @@ export const authController = {
         otp: generateOtp(),
       });
       // Save OTP to database
+
       await newVerification.save();
+      const data = await verifyModel.findOne({ userId: user._id });
+      if (!data) {
+        return res.status(404).json({
+          status: false,
+          message: "Error generating OTP",
+          data: "",
+        });
+      }
+      const detail = otpMail({ name: user.name, otp: data.otp });
       return res.status(200).json({
         status: true,
         message: "OTP sent successfully",
         data: newVerification,
+      });
+    } catch (error: any) {
+      console.log("Error during forget password:", error.message);
+      res.status(500).json({
+        status: false,
+        message: "Something went wrong",
+        data: "",
+      });
+    }
+  },
+
+  getProfile: async (req: CustomRequest, res: Response) => {
+    try {
+      const userId = req.user?._id;
+      if (!userId) {
+        return res.status(400).json({
+          status: false,
+          message: "User ID is required",
+          data: "",
+        });
+      }
+      const user = await userModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found",
+          data: "",
+        });
+      }
+      return res.status(200).json({
+        status: true,
+        message: "User profile fetched successfully",
+        data: user,
       });
     } catch (error: any) {
       console.log("Error during forget password:", error.message);

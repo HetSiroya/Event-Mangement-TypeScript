@@ -24,4 +24,14 @@ router.patch(
 router.delete("/deleteEvent/:id", auth, isAdmin, catchAsync(adminController.deleteEvent));
 // router.get("/getAllUsers", auth, isAdmin, catchAsync(adminController.getAllUsers));
 
+// Download attendees CSV for a given event
+router.get(
+  "/downloadAttendees/:eventId",
+  auth,
+  isAdmin,
+  catchAsync(adminController.downloadAttendeesCsv)
+);
+
+router.get("/getAllRigsterations" , auth , isAdmin , catchAsync(adminController.getAllRigsterations));
+
 export default router;
