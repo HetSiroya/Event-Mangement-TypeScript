@@ -21,5 +21,7 @@ router.patch(
   isAdmin,
   catchAsync(adminController.updateEvent)
 );
+router.delete("/deleteEvent/:id", auth, isAdmin, catchAsync(adminController.deleteEvent));
+// router.get("/getAllUsers", auth, isAdmin, catchAsync(adminController.getAllUsers));
 
 export default router;

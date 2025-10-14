@@ -66,4 +66,80 @@ export const eventController = {
       });
     }
   },
+  getRigstrations: async (req: CustomRequest, res: Response) => {
+    try {
+      const userId = req.user?._id;
+      if (!userId) {
+        return res.status(401).json({
+          status: false,
+          message: "Unauthorized: User ID is missing",
+          data: "",
+        });
+      }
+      const rigsterions = await rigsterModel.find({ userId: userId });
+      if (!rigsterions || rigsterions.length === 0) {
+        return res.status(404).json({
+          status: false,
+          message: "No rigsterions found for this user",
+          data: "",
+        });
+      }
+      return res.status(200).json({
+        status: true,
+        message: "Rigsterions fetched successfully",
+        data: rigsterions,
+      });
+    } catch (error: any) {
+      log("error", error.message);
+      return res.status(400).json({
+        status: false,
+        message: "Something went wrong",
+        data: "",
+      });
+    }
+  },
+
+  getSigleEventRigstrations: async (req: CustomRequest, res: Response) => {
+    try {
+      const eventId = req.params.eventId;
+      const userId = req.user?._id;
+      if (!eventId) {
+        return res.status(400).json({
+          status: false,
+          message: "Event ID is required",
+          data: "",
+        });
+      }
+      if (!userId) {
+        return res.status(401).json({
+          status: false,
+          message: "Unauthorized: User ID is missing",
+          data: "",
+        });
+      }
+      const data = await rigsterModel.findOne({
+        eventId: eventId,
+        userId: userId,
+      });
+      if (!data) {
+        return res.status(404).json({
+          status: false,
+          message: "No rigsterions found for this user and event",
+          data: "",
+        });
+      }
+      return res.status(200).json({
+        status: true,
+        message: "Rigsterions fetched successfully",
+        data: data,
+      });
+    } catch (error: any) {
+      log("error", error.message);
+      return res.status(400).json({
+        status: false,
+        message: "Something went wrong",
+        data: "",
+      });
+    }
+  },
 };

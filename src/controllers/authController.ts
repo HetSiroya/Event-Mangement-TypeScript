@@ -7,9 +7,11 @@ import { comparePassword, hashPassword } from "../helpers/hased";
 import { CustomRequest } from "../middlewares/token-decode";
 import verifyModel from "../models/verifyModel";
 import { generateOtp } from "../helpers/generateOtp";
+import sendEmail from "../helpers/sendMail";
+import { welcomeMail } from "../templates/welcome";
+import { otpMail } from "../templates/otp";
 
 export const authController = {
-  // Sign Up function
   signUp: async (req: Request, res: Response) => {
     try {
       const { name, email, password, confirmPassword, mobileNumber } = req.body;
@@ -48,7 +50,6 @@ export const authController = {
         });
       }
       const hasedPassword = await hashPassword(password);
-      //   email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({
@@ -79,6 +80,16 @@ export const authController = {
       };
       const token = generateToken(tokenUser);
       await newUser.save();
+      const Email = await sendEmail(
+        newUser.email,
+        "Welcome to Event Management",
+        welcomeMail(newUser)
+      );
+      if (Email) {
+        log("Email sent successfully");
+      } else {
+        log("Email not sent");
+      }
       return res.status(200).json({
         status: true,
         message: "User created successfully",
@@ -222,7 +233,7 @@ export const authController = {
       // check if email or mobile number already exists
       const existUser = await userModel.findOne({
         $or: [{ email }, { mobileNumber }],
-        _id: { $ne: userId }, 
+        _id: { $ne: userId },
       });
       if (existUser) {
         return res.status(400).json({
@@ -296,6 +307,7 @@ export const authController = {
         userId: user._id,
         otp: generateOtp(),
       });
+      await otpMail({ name: user.name, otp: newVerification.otp });
       // Save OTP to database
       await newVerification.save();
       return res.status(200).json({

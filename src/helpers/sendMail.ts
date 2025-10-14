@@ -1,5 +1,5 @@
 import express from "express";
-require("dotenv").config(); 
+require("dotenv").config();
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 
@@ -14,13 +14,16 @@ const transporter = nodemailer.createTransport({
   port: process.env.Email_Port,
 } as SMTPTransport.Options);
 
-const sendEmail = async (to: string, subject: string, message: string) => {
+// Send an email using HTML body. Optionally include a plain text fallback.
+const sendEmail = async (to: string, subject: string, html: string, text?: string) => {
   try {
     const mailOptions = {
       from: process.env.User,
       to,
       subject,
-      text: message,
+      // Prefer HTML emails; include text as fallback when provided
+      html,
+      text,
     };
 
     return await transporter.sendMail(mailOptions);

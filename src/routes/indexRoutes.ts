@@ -3,7 +3,9 @@ import { errorHandler } from "../middlewares/errorHandler";
 const router = express.Router();
 import authRoutes from "./authRoutes";
 import adminRoutes from "./adminRoutes";
-import event from './userEventRoutes'
+import event from "./userEventRoutes";
+import { isVerified } from "../middlewares/isVerified";
+import { auth } from "../middlewares/token-decode";
 router.get("/", (req, res, next) => {
   try {
     res.send("Welcome to the College Event Management API!");
@@ -13,8 +15,8 @@ router.get("/", (req, res, next) => {
 });
 
 router.use("/auth", authRoutes);
-router.use("/admin", adminRoutes); 
-router.use("/event" , event) 
+router.use("/admin", adminRoutes);
+router.use("/event", auth, isVerified, event);
 // Error handling middleware
 router.use(errorHandler);
 
