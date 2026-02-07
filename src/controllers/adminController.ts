@@ -15,7 +15,6 @@ const adminController = {
         data: "",
       });
     }
-
     try {
       const {
         title,
@@ -302,7 +301,7 @@ const adminController = {
     }
   },
 
-  getAllRigsterations : async (req : CustomRequest , res : Response) =>{
+  getAllRigsterations: async (req: CustomRequest, res: Response) => {
     try {
       const userId = req.user?._id;
       if (!userId) {
@@ -312,7 +311,9 @@ const adminController = {
           data: "",
         });
       }
-      const rigsterions = await rigsterModel.find({userId : userId}).populate("eventId");
+      const rigsterions = await rigsterModel
+        .find({ userId: userId })
+        .populate("eventId");
       if (!rigsterions || rigsterions.length === 0) {
         return res.status(404).json({
           status: false,
@@ -333,7 +334,58 @@ const adminController = {
         data: "",
       });
     }
-  }
+  },
+
+  makeAdmin: async (req: CustomRequest, res: Response) => {
+    try {
+      const userId = req.user?._id;
+      if (!userId) {
+        return res.status(401).json({
+          status: false,
+          message: "Unauthorized: User ID is missing",
+          data: "",
+        });
+      }
+      const newAdmin = req.body.userId;
+      const role = req.body.role;
+      if (role !== "admin" && role !== "user") {
+        return res.status(400).json({
+          status: false,
+          message: "Role must be either 'admin' or 'user'",
+          data: "",
+        });
+      }
+      if (!newAdmin) {
+        return res.status(400).json({
+          status: false,
+          message: "userId is required",
+          data: "",
+        });
+      }
+      const user = await userModel.findById(newAdmin);
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found",
+          data: "",
+        });
+      }
+      user.role = role;
+      await user.save();
+      return res.status(200).json({
+        status: true,
+        message: `User promoted to ${role} successfully`,
+        data: user,
+      });
+    } catch (error: any) {
+      console.error("Error generating attendees CSV:", error.message);
+      return res.status(500).json({
+        status: false,
+        message: "Internal server error",
+        data: "",
+      });
+    }
+  },
 };
 
 export default adminController;
